@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title mb-1">Hóa đơn phòng của tôi</h1>
+  <p class="text-muted mb-0">Bạn chỉ có thể xem các hóa đơn thuộc phòng đang thuê.</p>
+</div>
+<div class="table-responsive bg-white border">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Mã hóa đơn</th><th>Tháng</th><th>Phòng</th><th>Tổng tiền</th><th>Còn lại</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody>
+      {% for x in invoices %}
+      {% set pending=x.pending_payment_request %}
+      <tr>
+        <td class="fw-semibold">{{x.code}}</td>
+        <td>{{x.invoice_month.strftime('%m/%Y')}}</td>
+        <td>{{x.room.code}}</td>
+        <td>{{'{:,.0f}'.format(x.total)}} đ</td>
+        <td>{{'{:,.0f}'.format(x.balance)}} đ</td>
+        <td>
+          {% if pending %}
+          <span class="badge text-bg-info">Đang xử lý</span>
+          <div class="small text-muted mt-1">{{pending.method}}</div>
+          {% else %}
+          <span class="badge text-bg-{{'success' if x.status=='paid' else 'warning'}}">{{state(x.status)}}</span>
+          {% endif %}
+        </td>
+        <td class="text-nowrap">
+          <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{url_for('print_invoice',id=x.id)}}">In</a>
+          <a class="btn btn-sm btn-outline-secondary" href="{{url_for('pdf',id=x.id)}}">PDF</a>
+          {% if pending %}
+          <button class="btn btn-sm btn-secondary" disabled>Đang xử lý</button>
+          {% elif x.status!='paid' %}
+          <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#pay{{x.id}}">Thanh toán</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-center text-muted py-4">Chưa có hóa đơn cho phòng của bạn.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% for x in invoices %}
+{% if x.status!='paid' and not x.pending_payment_request %}
+<div class="modal fade" id="pay{{x.id}}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="{{url_for('request_invoice_payment',id=x.id)}}">
+      <div class="modal-header">
+        <h2 class="h5">Thanh toán {{x.code}}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">Số tiền cần thanh toán: <strong>{{'{:,.0f}'.format(x.balance)}} đ</strong></p>
+        <label class="form-label" for="method{{x.id}}">Phương thức thanh toán</label>
+        <select class="form-select" id="method{{x.id}}" name="method" required>
+          <option value="Chuyển khoản">Chuyển khoản</option>
+          <option value="Tiền mặt">Tiền mặt</option>
+        </select>
+        <p class="small text-muted mt-3 mb-0">Yêu cầu sẽ chuyển sang trạng thái đang xử lý cho đến khi quản trị viên xác nhận.</p>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary" type="submit">Thanh toán</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

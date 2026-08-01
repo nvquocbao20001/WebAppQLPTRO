@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="page-title mb-0">Hóa đơn</h1>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add">Tạo hóa đơn</button>
+</div>
+<div class="table-responsive bg-white border">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Mã hóa đơn</th><th>Tháng</th><th>Phòng</th><th>Tổng tiền</th><th>Còn lại</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody>
+      {% for x in invoices %}
+      {% set pending=x.pending_payment_request %}
+      <tr>
+        <td class="fw-semibold">{{x.code}}</td><td>{{x.invoice_month.strftime('%m/%Y')}}</td><td>{{x.room.code}}</td>
+        <td>{{'{:,.0f}'.format(x.total)}} đ</td><td>{{'{:,.0f}'.format(x.balance)}} đ</td>
+        <td>
+          {% if pending %}<span class="badge text-bg-info">Đang xử lý</span><div class="small text-muted mt-1">{{pending.method}} · {{'{:,.0f}'.format(pending.amount)}} đ</div>
+          {% else %}<span class="badge text-bg-{{'success' if x.status=='paid' else 'warning'}}">{{state(x.status)}}</span>{% endif %}
+        </td>
+        <td class="text-nowrap">
+          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit{{x.id}}">Sửa</button>
+          {% if pending %}
+          <form class="d-inline" method="post" action="{{url_for('approve_payment_request',id=pending.id)}}"><button class="btn btn-sm btn-success">Xác nhận</button></form>
+          <form class="d-inline" method="post" action="{{url_for('reject_payment_request',id=pending.id)}}"><button class="btn btn-sm btn-outline-danger" data-confirm="Từ chối yêu cầu thanh toán này?">Từ chối</button></form>
+          {% elif x.status!='paid' %}<button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#pay{{x.id}}">Thu tiền</button>{% endif %}
+          <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{url_for('print_invoice',id=x.id)}}">In</a>
+          <a class="btn btn-sm btn-outline-secondary" href="{{url_for('pdf',id=x.id)}}">PDF</a>
+          <form class="d-inline" method="post" action="{{url_for('delete_invoice',id=x.id)}}"><button class="btn btn-sm btn-outline-danger" data-confirm="Xóa hóa đơn và lịch sử thanh toán?">Xóa</button></form>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có hóa đơn.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for x in invoices %}
+{% set detail_text=x.details|map(attribute='description')|join(' ') %}
+<div class="modal fade" id="edit{{x.id}}"><div class="modal-dialog modal-lg"><form class="modal-content" method="post" action="{{url_for('update_invoice',id=x.id)}}">
+  <div class="modal-header"><h2 class="h5">Sửa {{x.code}}</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body row g-3">
+    <div class="col-md-6"><label class="form-label">Phòng</label><select class="form-select" name="room_id">{% for r in rooms %}<option value="{{r.id}}" {% if x.room_id==r.id %}selected{% endif %}>{{r.code}} - {{r.name}}</option>{% endfor %}</select></div>
+    <div class="col-md-6"><label class="form-label">Tháng</label><input class="form-control" type="month" name="invoice_month" value="{{x.invoice_month.strftime('%Y-%m')}}"></div>
+    <div class="col-md-4"><label class="form-label">Tiền phòng</label><input class="form-control" type="number" name="room_fee" value="{{x.room_fee}}"></div>
+    <div class="col-md-4"><label class="form-label">Tiền điện</label><input class="form-control" type="number" name="electricity_fee" value="{{x.electricity_fee}}"></div>
+    <div class="col-md-4"><label class="form-label">Tiền nước</label><input class="form-control" type="number" name="water_fee" value="{{x.water_fee}}"></div>
+    <div class="col-12"><label class="form-label">Dịch vụ phòng sử dụng</label><div class="border rounded p-2 services-picker">{% for service in services %}<label class="d-flex align-items-center justify-content-between py-1"><span><input class="form-check-input me-2" type="checkbox" name="service_ids" value="{{service.id}}" {% if service.name in detail_text %}checked{% endif %}>{{service.name}}</span><small class="text-muted">{{'{:,.0f}'.format(service.unit_price)}} đ / {{'người' if service.calculation=='person' else 'phòng'}}</small></label>{% else %}<small class="text-muted">Chưa có dịch vụ đang sử dụng.</small>{% endfor %}</div></div>
+    <div class="col-md-6"><label class="form-label">Phát sinh</label><input class="form-control" type="number" name="extra_fee" value="{{x.extra_fee}}"></div>
+    <div class="col-md-6"><label class="form-label">Giảm giá</label><input class="form-control" type="number" name="discount" value="{{x.discount}}"></div>
+    <div class="col-md-6"><label class="form-label">Hạn thanh toán</label><input class="form-control" type="date" name="due_date" value="{{x.due_date or ''}}"></div>
+    <div class="col-md-6"><label class="form-label">Đã thu</label><input class="form-control" value="{{'{:,.0f}'.format(x.paid_amount)}} đ" disabled></div>
+    <div class="col-12"><label class="form-label">Ghi chú</label><textarea class="form-control" name="notes">{{x.notes or ''}}</textarea></div>
+  </div><div class="modal-footer"><button class="btn btn-primary">Cập nhật</button></div>
+</form></div></div>
+<div class="modal fade" id="pay{{x.id}}"><div class="modal-dialog"><form class="modal-content" method="post" action="{{url_for('pay_invoice',id=x.id)}}">
+  <div class="modal-header"><h2 class="h5">Thanh toán {{x.code}}</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><p>Còn phải thu: <strong>{{'{:,.0f}'.format(x.balance)}} đ</strong></p><label class="form-label">Số tiền</label><input class="form-control mb-3" name="amount" type="number" min="1" max="{{x.balance}}" required><label class="form-label">Phương thức</label><select class="form-select" name="method"><option>Tiền mặt</option><option>Chuyển khoản</option></select></div>
+  <div class="modal-footer"><button class="btn btn-primary">Xác nhận thu</button></div>
+</form></div></div>
+{% endfor %}
+
+<div class="modal fade" id="add"><div class="modal-dialog modal-lg"><form class="modal-content" method="post">
+  <div class="modal-header"><h2 class="h5">Tạo hóa đơn</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body row g-3">
+    <div class="col-md-6"><label class="form-label">Phòng</label><select class="form-select" name="room_id">{% for r in rooms %}<option value="{{r.id}}">{{r.code}} - {{r.name}}</option>{% endfor %}</select></div>
+    <div class="col-md-6"><label class="form-label">Tháng</label><input class="form-control" type="month" name="invoice_month" value="{{today().strftime('%Y-%m')}}"></div>
+    <div class="col-12"><label class="form-label">Dịch vụ phòng sử dụng</label><div class="border rounded p-2 services-picker">{% for service in services %}<label class="d-flex align-items-center justify-content-between py-1"><span><input class="form-check-input me-2" type="checkbox" name="service_ids" value="{{service.id}}">{{service.name}}</span><small class="text-muted">{{'{:,.0f}'.format(service.unit_price)}} đ / {{'người' if service.calculation=='person' else 'phòng'}}</small></label>{% else %}<small class="text-muted">Vào mục Dịch vụ để tạo khoản thu trước.</small>{% endfor %}</div><small class="text-muted">Dịch vụ theo người tự nhân với số người đang ở phòng.</small></div>
+    <div class="col-md-6"><label class="form-label">Phát sinh</label><input class="form-control" type="number" name="extra_fee" value="0"></div>
+    <div class="col-md-6"><label class="form-label">Giảm giá</label><input class="form-control" type="number" name="discount" value="0"></div>
+    <div class="col-12"><label class="form-label">Hạn thanh toán</label><input class="form-control" type="date" name="due_date"></div>
+    <div class="col-12"><label class="form-label">Ghi chú</label><textarea class="form-control" name="notes"></textarea></div>
+  </div><div class="modal-footer"><button class="btn btn-primary">Tạo hóa đơn</button></div>
+</form></div></div>
+{% endblock %}

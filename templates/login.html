@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <title>&#272;&#259;ng nh&#7853;p | Qu&#7843;n l&#253; nh&#224; tr&#7885;</title>
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-intro">
+      <div class="intro-top">
+        <div class="brand-mark"><i data-lucide="building-2"></i></div>
+        <span class="brand-name">Nh&#224; tr&#7885; Connect</span>
+      </div>
+      <div class="intro-copy">
+        <span class="intro-kicker">B&#7842;NG &#272;I&#7872;U H&#192;NH QU&#7842;N L&#221;</span>
+        <h1>V&#7853;n h&#224;nh nh&#224; tr&#7885; r&#245; r&#224;ng h&#417;n m&#7895;i ng&#224;y.</h1>
+        <p>Theo d&#245;i ph&#242;ng, ng&#432;&#7901;i thu&#234;, h&#243;a &#273;&#417;n v&#224; d&#242;ng ti&#7873;n trong m&#7897;t n&#417;i l&#224;m vi&#7879;c.</p>
+      </div>
+      <div class="intro-points">
+        <div><i data-lucide="badge-check"></i><span>Qu&#7843;n l&#253; th&#244;ng tin t&#7853;p trung</span></div>
+        <div><i data-lucide="receipt-text"></i><span>H&#243;a &#273;&#417;n minh b&#7841;ch, d&#7877; in</span></div>
+        <div><i data-lucide="chart-no-axes-combined"></i><span>N&#7855;m b&#7855;t doanh thu nhanh ch&#243;ng</span></div>
+      </div>
+      <div class="intro-footer">H&#7879; th&#7889;ng qu&#7843;n l&#253; n&#7897;i b&#7897;</div>
+    </section>
+    <section class="login-form-side">
+      <div class="login-card-new">
+        <div class="mobile-brand"><div class="brand-mark"><i data-lucide="building-2"></i></div><span>Nh&#224; tr&#7885; Connect</span></div>
+        <header class="login-heading">
+          <h2>Ch&#224;o m&#7915;ng tr&#7903; l&#7841;i</h2>
+          <p>&#272;&#259;ng nh&#7853;p &#273;&#7875; truy c&#7853;p b&#7843;ng &#273;i&#7873;u khi&#7875;n.</p>
+        </header>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} login-alert">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+        <form method="post" class="login-form" autocomplete="on">
+          <label for="username">T&#234;n &#273;&#259;ng nh&#7853;p</label>
+          <div class="input-wrap"><i data-lucide="user-round"></i><input id="username" name="username" placeholder="Nh&#7853;p t&#234;n &#273;&#259;ng nh&#7853;p" required autofocus autocomplete="username"></div>
+          <label for="password">M&#7853;t kh&#7849;u</label>
+          <div class="input-wrap"><i data-lucide="lock-keyhole"></i><input id="password" name="password" type="password" placeholder="Nh&#7853;p m&#7853;t kh&#7849;u" required autocomplete="current-password"><button class="password-toggle" type="button" aria-label="Hi&#7879;n m&#7853;t kh&#7849;u"><i data-lucide="eye"></i></button></div>
+          <button class="login-submit" type="submit">&#272;&#259;ng nh&#7853;p <i data-lucide="arrow-right"></i></button>
+        </form>
+        <div class="login-help"><i data-lucide="shield-check"></i><span>T&#224;i kho&#7843;n m&#7863;c &#273;&#7883;nh: <strong>admin / admin123</strong></span></div>
+      </div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();document.querySelector('.password-toggle').addEventListener('click',function(){const input=document.querySelector('#password');const show=input.type==='password';input.type=show?'text':'password';this.setAttribute('aria-label',show?'&#7848;n m&#7853;t kh&#7849;u':'Hi&#7879;n m&#7853;t kh&#7849;u');this.innerHTML=show?'<i data-lucide="eye-off"></i>':'<i data-lucide="eye"></i>';lucide.createIcons();});</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Biến môi trường và thông tin bí mật
+.env
+.env.*
+!.env.example
+
+# Môi trường Python và cache
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# File build và file tạm
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+
+# Công cụ phát triển
+.vscode/
+
+# Tài nguyên tải lên cục bộ
+static/uploads/*
+!static/uploads/.gitkeep
